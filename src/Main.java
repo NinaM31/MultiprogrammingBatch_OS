@@ -1,7 +1,7 @@
 class Main {
 	//Hardware Specification
-	static double ram_Size = 198;
-	static double hardD_Size = 2000;
+	static double ram_Size = 198000;
+	static double hardD_Size = 2000000;
     
 	public static void main(String[]args){
     	OsSimulator os = new OsSimulator();

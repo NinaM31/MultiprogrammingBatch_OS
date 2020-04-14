@@ -8,11 +8,10 @@ import java.io.IOException;
  * 
  * **/
 public class HardDisk {
-	
 	double space ;
 	double sizeOfAllProcess;
 	int noOfProcesses;
-	Node<PCB> head;
+	Node<Job> head;
 	
 	double MaxEMR;
 	double MinEMR;
@@ -26,9 +25,7 @@ public class HardDisk {
 	public boolean isJobQueueEmpty() {
 		return head == null;
 	}
-	public PCB last() {
-		return head.data;
-	}
+	
 //----------------------------------------HardDisk Storage of Jobs---------------------------------------------		
 	public void createJobQueue() {
 		System.out.println("Loading Job.txt into the Job Queue....");
@@ -51,15 +48,13 @@ public class HardDisk {
 					
 					//Generating PCB To admit to the system with a NEW state
 					Job job = new Job(jid, ecu, emr);
-					PCB pcb = new PCB( job );
+					enqueueToHDD(job);	
 					
-					enqueueToHDD(pcb, ecu);			
 				}	
 			}
 			buffer.close();
-			System.out.println("Created Job Queue Succesfully And generated PCB for each job, Jobs are in NEW STATE");
+			System.out.println("Created Job Queue Succesfully\nJobs are in Job Queue");
 			
-			MaxEMR = emr; //The Max emr of the processes
 			avg = sizeOfAllProcess/noOfProcesses; //The average 
 			
 		}catch (FileNotFoundException e)  {System.out.println("Load Failed, Job.txt not found");}
@@ -71,8 +66,8 @@ public class HardDisk {
  * Such that once enqueued from hard disk the shortest job will be removed first
  * BASED ON SSR policy
  * **/
-	private void enqueueToHDD(PCB e, int ecu) {
-		Node<PCB> newNode = new Node<>(e, ecu);
+	private void enqueueToHDD(Job e) {
+		Node<Job> newNode = new Node<>(e);
 		
 		//Maybe this process EMR is less than that of the head
 	    if ( noOfProcesses == 0 || e.getEMR() < head.data.getEMR() ) {
@@ -80,15 +75,14 @@ public class HardDisk {
 	        head = newNode;
 			MinEMR = e.getEMR();//smallest EMR for a process
 	    } else {
-	        Node<PCB> current = head;
-	        Node<PCB> prev = null;
+	        Node<Job> current = head;
+	        Node<Job> prev = null;
 	        
 	        //To place the process with the smallest EMR before the biggest EMR
 	        while ((current != null) && (e.getEMR() >= current.data.getEMR())) {
 	            prev = current;
 	            current = current.next;
-	        }
-	        
+	        }  
 	        newNode.next = current;
 	        prev.next = newNode;
 	    }
@@ -96,10 +90,12 @@ public class HardDisk {
 	    noOfProcesses++;//We added a process	    
 	 }	
 //-------------------dequeuing the smallest job first <PCB, ECU> pair----------------------
-	 public Node<PCB> dequeue() {
-	     Node<PCB> node = head;
+	 public Job dequeue() {
+	     Node<Job> node = head;
 	     head = head.next;
 	     noOfProcesses--;
-	     return node;
+	     if(noOfProcesses == 0)
+			 MaxEMR = node.data.getEMR(); //The Max emr of the processes
+	     return node.data;
 	 }
 }

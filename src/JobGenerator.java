@@ -10,7 +10,6 @@ import java.io.IOException;
  * 
  * **/
 public class JobGenerator {
-	
 //----------------------Used for testing purposes-------------------------------------
 	public static void creatTextFile() {
 		int max = 512; 
@@ -22,7 +21,7 @@ public class JobGenerator {
 		File file = new File("jobs.txt");		    	
 		try {
 			FileWriter writer = new FileWriter(file);
-			for (int i=1; i<= Main.hardD_Size/100; i++) {   		
+			for (int i=1; i<= 100; i++) {   		
 				//This will generate between 16 and 512 units
 				int rand1 = (int)(Math.random() * rangeECU) + min;
 				int rand2 = (int)(Math.random() * rangeEMR) + 16;
@@ -47,38 +46,4 @@ public class JobGenerator {
 			System.out.println("Exception when writing into Job.txt\nLocation of error in HardDisk");
 		}	
 	}
-	
-//-------------------------------------Generating to fill in the HDD----------------------------------------------
-		public static void creatTextFile(double space) {
-			System.out.println("Generated Job.txt ");
-			try {
-				File file = new File("jobs.txt");
-				FileWriter writer = new FileWriter(file);
-				
-				//We are taking minus 16 the minimum range to check if even the smallest process could fit into the File and not overfit 
-				while(space - 16 > 0 ) {
-					Job a = new Job();
-							
-					//Writing into the file
-					writer.write("JID:" + a.getJID());
-					writer.write(System.getProperty("line.separator"));
-					writer.write("ECU:" + a.getECU());
-					writer.write(System.getProperty("line.separator"));
-					writer.write("EMR:" +a.getEMR());
-					writer.write(System.getProperty("line.separator"));
-					writer.write("====================================================================");
-		            writer.write(System.getProperty("line.separator"));	
-		            
-		            space = space - a.getEMR();
-				}
-				
-				writer.close();// always close
-				System.out.println("Jobs.txt file Generated Successfully");
-				
-			} catch (FileNotFoundException e) {
-				System.out.println("File not found Job.txt\nLocation of error in HardDisk");
-			}catch(IOException e) {
-				System.out.println("Exception when writing into Job.txt\nLocation of error in HardDisk");
-			}	
-		}
 }

@@ -19,8 +19,8 @@ public class RAM {
 	}
 
 //-----------------------First come First Serve Algorithm----------------------
-	public void insertToReadyQueue(PCB e, int ecu) {
-		Node<PCB> newNode = new Node<>(e, ecu);
+	public void insertToReadyQueue(PCB e) {
+		Node<PCB> newNode = new Node<>(e);
 		if(noOfProcesses == 0) {
 			head = newNode;
 			tail = head;
@@ -32,11 +32,11 @@ public class RAM {
 	}
 	
 	//Dispatching a process from the RAM
-	public Node<PCB> dispatch() {
+	public PCB dispatch() {
 		Node<PCB> node = head;
 	    head = head.next;
 	    noOfProcesses--;
 	    mSpace = mSpace + node.data.getEMR();
-	    return node;
+	    return node.data;
 	}	
 }

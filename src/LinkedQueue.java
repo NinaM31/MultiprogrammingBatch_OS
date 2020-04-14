@@ -19,9 +19,9 @@ public class LinkedQueue<T>{
 
 	public void enqueue(T e){
 		if(tail == null)
-			{head = tail = new Node<>(e, 0);}
+			{head = tail = new Node<>(e);}
 		
-		else {tail.next = new Node<>(e, 0);
+		else {tail.next = new Node<>(e);
 			tail = tail.next;}
 			size++;}
 	

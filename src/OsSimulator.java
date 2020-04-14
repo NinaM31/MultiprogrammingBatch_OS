@@ -1,17 +1,17 @@
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.Random;
+
 
 /** The purpose of this class it simulate an operating system**/
 public class OsSimulator {
 	private HardDisk hdd;
 	private RAM ram;
 	
-	int noAbnormanl =0; //jobs completed abnormally.
-	int noNormanl=0 ; //jobs completed normally.
-	double noProcessedJobs=0 ; //Total number of jobs processed.
-	double noJobsServiced =0; // Number of jobs serviced by I/O device
+	int noAbnormanl = 0; //jobs completed abnormally.
+	int noNormanl = 0 ; //jobs completed normally.
+	double noProcessedJobs = 0 ; //Total number of jobs processed.
+	double noJobsServiced = 0; // Number of jobs serviced by I/O device
 	double avgWT = 0;
 	
 	LinkedQueue<PCB> IO_Queue;  // I/O queue
@@ -31,8 +31,8 @@ public class OsSimulator {
     	System.out.println("Operating system Set up Completed");
     	System.out.println("Hardware Sepcification:");
     	System.out.println("CPU: " + "1" + " core");
-    	System.out.println("HardDisk size: " + Main.hardD_Size + " MB");
-    	System.out.println("RAM Size:" + Main.ram_Size + " MB");
+    	System.out.println("HardDisk size: " + Main.hardD_Size + " KB");
+    	System.out.println("RAM Size:" + Main.ram_Size + " KB");
     	System.out.println();
 	}
 	
@@ -40,6 +40,7 @@ public class OsSimulator {
 	public void loadToHardDisk() {
 		try {
 			hdd.createJobQueue();
+			
 		}catch(Exception e){
 			System.out.println("Hard Disk Specification not defined");
 		}
@@ -61,89 +62,97 @@ public class OsSimulator {
 		 * Finally at the end a Result text will be generated
 		 * */
 		
-		while(!hdd.isJobQueueEmpty()) {
+		while(!hdd.isJobQueueEmpty() || !ram.isEmpty()) {
 			
 			jobSchedule();
 			cpuScheduler();
 		}
 		System.out.println();
-		generateResultText(); 
-		
+		generateResultText(); 		
 	}
 
 	//Schedules jobs using SSR policy
 	public void jobSchedule() {
 		System.out.println("Job Scheduler Addmitting PCBs into Ready Queue....");
 
-	    while (ram.mSpace - 16 > 0 && hdd.noOfProcesses > 0) {//fill the ready queue with processes from Job queue.		
-	    	Node<PCB> pair = hdd.dequeue(); //Pair of <PCB, ECU>
-		    	
-		    int ECU = pair.getECU(); // Get ECU of the process	
-		    PCB pcb = pair.getData();
+	    while (ram.mSpace - 256 > 0 && hdd.noOfProcesses > 0) {//fill the ready queue with processes from Job queue by checking if maximum size will still fit.		
+	    	Job job = hdd.dequeue(); 
+	    	PCB pcb = new PCB(job);
+	    	
 		    pcb.setState("Ready");//Update State
-
 		    ram.mSpace = ram.mSpace - pcb.getEMR();
 		    
-	    	ram.insertToReadyQueue(pcb, ECU);
-	    	
+	    	ram.insertToReadyQueue(pcb);
+	    	noProcessedJobs++;
 		} 
-	    System.out.println("The PCB's joined the Ready Queue and are in READY STATE.\n");
+	    System.out.println("The PCB's created and joined the Ready Queue and are in READY STATE.\n");
 	}
+	
 	public void cpuScheduler() {
 		boolean IOrequest = false;
-		System.out.println("Dispatching Processes from the Ready Queue to be processed bt CPU..");
+		System.out.println("Dispatching Processes from the Ready Queue to be processed by CPU..\n");
 		while(!ram.isEmpty()) {
 
-			Node<PCB> pair = ram.dispatch();
-			
-			PCB dispatched = pair.data;
+			PCB dispatched = ram.dispatch();
 			dispatched.setState("Running");//Update status 
 			
-			noProcessedJobs++; 
-
-			while(dispatched.getCUT() < pair.getECU()) { 
+			System.out.println("PID " + dispatched.getPID() + " is Running");
+			System.out.println("Dispatched PID " + dispatched.getPID() );
+			
+			 
+			double interrupt;
+			while(true) { 
 				dispatched.incrementCUT();
-				
-				double interrupt = generateInterrupt();
-				 if (interrupt <= 0.05){
-			         TerminationStatus = "abnormally";
-			         noNormanl++;
-			         displayTerminatedProcess(dispatched);
-			         break;
-			     }else if (interrupt <= 0.10){
-			    	 TerminationStatus = "normally";
-			    	 noAbnormanl++;
-			    	 displayTerminatedProcess(dispatched);
-			    	 break;
-			     }
-			     else if (interrupt <= 0.20){
+
+				interrupt = generateInterrupt();
+				 if (interrupt <= 0.2){
 			         IO_Queue.enqueue(dispatched);
 			         dispatched.setState("Waiting");
 			         IOrequest = true;
+			         System.out.println("PID " + dispatched.getPID() + " has I/O Request\n");
+			         //jobSchedule();
 			         break;
-			    }
-			}				 
-		}
-		
+			     }
+				 interrupt = generateInterrupt(); 
+				 if (interrupt <= 0.10 && dispatched.getCUT() <= dispatched.getECU() ){
+			    	 TerminationStatus = "normally";
+			    	 noNormanl++;
+			    	 displayTerminatedProcess(dispatched);
+			    	 jobSchedule();
+			    	 break;
+			     }
+				 interrupt = generateInterrupt(); 
+				 if (interrupt <= 0.05 || dispatched.getCUT() > dispatched.getECU()){
+			         TerminationStatus = "abnormally";
+			         noAbnormanl++;
+			         displayTerminatedProcess(dispatched);
+			         jobSchedule();
+			         break;
+			     }
+			}			
+		}	
 		if(IOrequest)
 			IORequest();	
 		System.out.println("Disspatched processes\n");
 	}
-//-----------------------------------------------IO Queue------------------------------------------------------------
+//-----------------------------------------------IO Queue-----------------------------------------
 	public void IORequest(){  
-		System.out.println("Serving the processes Requesting IO in the IO Queue");
-	    int length = IO_Queue.length();
-	    boolean IO = true;
+		System.out.println("Serving the processes Requesting IO in the IO Queue...\n"); 
+		int length = IO_Queue.length();
 	    int i;
 	    int wt;
 	    double sumWT = 0;
+	    
 	    while (IO_Queue.length() != 0 ){
+	    	boolean IO = true;
 	    	
-	    	noJobsServiced++;
 	    	PCB dispatched = IO_Queue.serve();
 	    	i = dispatched.getIRT();
 	    	wt =  dispatched.getWT();
 	    	
+	    	if(i == 0)
+	    		noJobsServiced++;
+
 	    	while (IO){
 	    		dispatched.setIRT(++i);
 	    		dispatched.setWT(++wt);
@@ -152,26 +161,22 @@ public class OsSimulator {
 	    		double interrupt = generateInterrupt();
 	    		
 	    		if (interrupt <= 0.20){
-	    			System.out.println("I/O device Available");
 	    			IO = false ;
-	    			break;
+	    			
+	    			dispatched.setWT(wt+length-1);
+	    			dispatched.setState("Ready");
+	    			ram.insertToReadyQueue(dispatched); 
 	    		}
-	     } 
-	    sumWT = wt + sumWT;
-	    dispatched.setState("Ready");
-	    dispatched.setWT(wt+length-1);
-	    ram.insertToReadyQueue(dispatched, 0); 
+	    	} 
+	    	sumWT = wt + sumWT;	
 	   }
 	   avgWT = sumWT/noJobsServiced;
-	   System.out.println("\nServed all IO Request they are all back in Ready queue");
+	   System.out.println("\nServed all IO Request they are back in Ready queue");
 	}
 
 	//Generates a Random interrupt between 0.0 and 1.0
 	public double generateInterrupt(){ 
-	     Random rand = new Random(); //instance of random class
-	     double interrupt =rand.nextDouble();
-
-	     return interrupt;
+	     return Math.random();
 	 }
 //=============Displaying the status of the dispatched process ===================
 	public void displayTerminatedProcess(PCB dispatched){
@@ -183,6 +188,7 @@ public class OsSimulator {
 		System.out.println("Process IRT : " + dispatched.getIRT());
 		System.out.println("Process WT : " + dispatched.getWT());
 		System.out.println("Process termination status : "+ TerminationStatus +"\n" );
+		
 	}
 	
 //===========================================Results of the Project==================
@@ -190,12 +196,12 @@ public class OsSimulator {
 		try (PrintWriter writer = new PrintWriter("Result.txt", "UTF-8")) {
 	         writer.println("Total number of jobs processed: "+ noProcessedJobs);
 	         writer.println("Number of jobs that completed normally:" + noNormanl);
-	         writer.println("Number of jobs that completed abnormally:"+noAbnormanl);
+	         writer.println("Number of jobs that completed abnormally:" + noAbnormanl);
 	         writer.println("Average job size in KB: "+ hdd.avg);
 	         writer.println("Minimum job size in KB: "+ hdd.MinEMR);
 	         writer.println("Maximum job size in KB: "+ hdd.MaxEMR);
 	         writer.println("CPU utilization: "+ CPUutilization() + "%" );
-	         writer.println("Number of jobs serviced by I/O device: "+noJobsServiced);
+	         writer.println("Number of jobs serviced by I/O device: " + noJobsServiced);
 	         writer.println("I/O utilization: "+ IOutilization() + "%" );
 	         writer.println("Average waiting time: " + avgWT);
 	         
@@ -206,13 +212,11 @@ public class OsSimulator {
 	}
 	
 	public double CPUutilization() {
-		double uti = ((noProcessedJobs-noJobsServiced)/noProcessedJobs) * 100.0;
-		
+		double uti = ((noProcessedJobs-noJobsServiced)/noProcessedJobs) * 100.0;	
 		return uti ;
 	}
 	public double IOutilization() {
-		double uti = ((noJobsServiced)/noProcessedJobs) * 100;
-		;
+		double uti = ((noJobsServiced)/noProcessedJobs) * 100;	
 		return uti;
 	}
 	

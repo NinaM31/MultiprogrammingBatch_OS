@@ -1,6 +1,6 @@
 public class PCB {
     private int CUT; //the amount of CPU units consumed by the process.
-    
+    private int ECU;
     private int PID;  //(same as JID)
     private String state; //(New, Ready, Waiting, Terminated, Running)
     private double EMR; //Memory in KB allocated (equals to EMR)
@@ -17,8 +17,8 @@ public class PCB {
 		EMR = p.getEMR();
 		IRT = 0;
 		WT = 0;
+		ECU = p.getECU();
 	}
-	
     public void incrementCUT() {
     	CUT++;
     }
@@ -34,6 +34,7 @@ public class PCB {
     public void setIRT(int IRT) 	   {this.IRT = IRT;}
     public void setWT(int WT) 		   {this.WT = WT;}
     public void setState(String state) {this.state = state;}
+    public int getECU() 			   {return ECU;}
 }
  
  

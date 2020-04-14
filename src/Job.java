@@ -10,7 +10,7 @@ public class Job{
     public void setECU(int ECU) {this.ECU = ECU;}
     public void setEMR(int EMR) {this.EMR = EMR;}
     public int getJID() 		{return JID;}
-    public double getECU() 		{return ECU;}
+    public int getECU() 		{return ECU;}
     public double getEMR() 		{return EMR;}
     
 //===================================Constructors================================================= 

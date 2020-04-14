@@ -1,0 +1,10 @@
+Total number of jobs processed: 100.0
+Number of jobs that completed normally:77
+Number of jobs that completed abnormally:23
+Average job size in KB: 130.36
+Minimum job size in KB: 16.0
+Maximum job size in KB: 256.0
+CPU utilization: 35.0%
+Number of jobs serviced by I/O device: 65.0
+I/O utilization: 65.0%
+Average waiting time: 2.8615384615384616
